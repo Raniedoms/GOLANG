@@ -1,0 +1,42 @@
+
+https://medium.com/@lucasmagnum/iniciando-em-go-estrutura-de-dados-maps-31432622e633#:~:text=Um%20map%20%C3%A9%20uma%20estrutura,est%C3%A1%20fora%20do%20nosso%20escopo).
+
+Um map é uma estrutura de dados capaz de associar uma chave a um valor. 
+Eles são extremamente eficientes em retornar um valor baseado na chave,
+isso porque os maps são uma implementação de uma hash table (Esse link
+pode ajudar a entender o que é uma hash table, essa explicação está
+fora do nosso escopo).
+É importante saber que os maps armazenam seus valores de forma não ordenada,
+então não espere obter os valores na mesma ordem que foram inseridos quando
+estiver iterando sobre seus valores.
+
+
+Estrutura de um map
+Um map possui uma estrutura similar a essa:
+
+map[TipoChave]TipoValor
+Precisamos sempre informar qual é o tipo da nossa chave e qual o tipo do valor que será armazenado.
+Os tipos func, map e slice não podem ser utilizados como chave.
+
+Declaração de map
+Podemos declarar um map de três formas, utilizando var, make e de forma literal
+
+// Declaração utilizando var
+var meuMapa map[string]string
+// Declaração utilizando make
+meuMapa := make(map[string]string)
+// Declaração de forma literal
+meuMapa := map[string]string{}
+
+
+Declaração de map utilizando var
+O valor zero de um mapa é o nil. Mapas que possuem o valor nil não podem ser modificados.
+ao declarar uma variável utilizando a palavra reservada var estamos iniciando essa variável
+com seu zero value e um mapa possui o seu zero value igual a nil. Dessa forma temos o
+seguinte problema:
+
+var meuMapa map[string]string
+// Essa linha de código não será executada, pois o nosso mapa tem o valor nil e portanto
+não é possível adicionar uma chave.
+
+meuMapa["minhachave"] = "meu valor"
