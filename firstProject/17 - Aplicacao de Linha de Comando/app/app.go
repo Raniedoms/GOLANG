@@ -26,6 +26,7 @@ func Gerar() *cli.App{
 					Value: "devbook.com.br",
 				},
 			},
+
 			Action: buscarIps,
 		},
 	}
@@ -33,10 +34,12 @@ func Gerar() *cli.App{
 	return app
 } 
 
+//faz a aplicacao ser executada de forma valida
 func buscarIps(c *cli.Context){
+	//retorna o valor da flag Host
 	host := c.String("host")
 
-	//net
+	//net - busca os ips 
 	ips, erro := net.LookupIP(host)
 	if erro != nil {
 		log.Fatal(erro)
