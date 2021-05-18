@@ -1,0 +1,21 @@
+{
+	"$id": "https://example.com/person.schema.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"properties": {
+		"contract": {
+			"type": "object",
+			"required": ["number"],
+			"properties": {
+				"number": {
+					"type": "string",
+					"minLength": 1
+				}
+			}
+		},
+		"cpf":{
+			"type": "string",
+			"minLength": 1,
+
+		}
+	}
+}
