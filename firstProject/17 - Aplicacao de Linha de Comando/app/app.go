@@ -1,51 +1,71 @@
 package app
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"net"
+
 	"github.com/urfave/cli"
 )
 
 //Gerar vai retornar a aplicacao de linha de comando pronta para ser executada.
 
-func Gerar() *cli.App{
+func Gerar() *cli.App {
 	app := cli.NewApp()
 	app.Name = "Aplicacao de Linha de Comando"
 	app.Usage = "Busca IPs e Noes de Servidor na internet"
 
+	flags := []cli.Flag{
+		cli.StringFlag{
+			Name:  "host",
+			Value: "devbook.com.br",
+		},
+	}
+
 	//command e um struct
 	app.Commands = []cli.Command{
 		{
-			Name: "ip",
+			Name:  "ip",
 			Usage: "Busca IPS de enderecos na internet",
 			//Flags - parametro apra que esse comando funcione
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name: "host",
-					Value: "devbook.com.br",
-				},
-			},
-
+			Flags:  flags,
 			Action: buscarIps,
+		},
+		{
+			Name:   "servidores",
+			Usage:  "Busca o nome dos servidores na internet",
+			Flags:  flags,
+			Action: buscarServidores,
 		},
 	}
 
 	return app
-} 
+}
 
 //faz a aplicacao ser executada de forma valida
-func buscarIps(c *cli.Context){
+func buscarIps(c *cli.Context) {
 	//retorna o valor da flag Host
 	host := c.String("host")
 
-	//net - busca os ips 
+	//net - busca os ips
 	ips, erro := net.LookupIP(host)
 	if erro != nil {
 		log.Fatal(erro)
 	}
 
-	for _, ip := range ips{
+	for _, ip := range ips {
 		fmt.Println(ip)
+	}
+}
+
+func buscarServidores(c *cli.Context) {
+	host := c.String("host")
+
+	servidores, erro := net.LookupNS(host) //name_server
+	if erro != nil {
+		log.Fatal(erro)
+	}
+	for _, servidor := range servidores {
+		fmt.Println(servidor)
 	}
 }
