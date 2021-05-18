@@ -1,0 +1,10 @@
+{
+    "name": "Bob",
+    "age": 20,
+    "city": {
+      "city_name": "London",
+      "city_gpd": 500,
+      "city_population": 800000
+    },
+    "created_at": "2021-05-14T18:06:01.420370339-03:00"
+  }
