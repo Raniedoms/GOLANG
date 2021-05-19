@@ -20,3 +20,7 @@ sudo mysql -u root -p
 desc usuarios; - verifica o que tem dentro da tabela
 
 go get github.com/go-sql-driver/mysql
+
+mysql -u golang -p
+use devbook;
+select * from usuarios;

@@ -53,6 +53,12 @@ func main() {
 	//fmt.Println(string(personJSON)) //exibe dados do csv
 	//[{"name":"name","nickname":"nickname","text":"text"},{"name":"Valéria","nickname":"Valchan","text":"has been here!"}]
 	fmt.Println("{{$root := initTag}}")
-	fmt.Println("{{$addTag $root " + "\"" + template[1].Request + "\"" + " " + template[1].Response + "}}") //exibe dados do csv
-	// Valchan has been here!
+	for _, line := range template {
+		emp := CSV{
+			Request:  line.Request,
+			Response: line.Response,
+		}
+		fmt.Println("{{$addTag $root " + "\"" + emp.Request + "\"" + " " + emp.Response + "}}") //exibe dados do csv
+	} // Valchan has been here!
+	fmt.Println("{{toJson $root}}")
 }

@@ -1,2 +1,4 @@
 request;resposne;
-"body.name";".response.name";has been here!
+"body.name";".response.name";
+"body.cpf";".response.cpf";
+"body.tel";".response.tel";
