@@ -33,7 +33,7 @@ func main() {
 	reader := csv.NewReader(bufio.NewReader(csvFile)) //lê arquivo
 	reader.Comma = ';'                                //define delimitador
 
-	var person []CSV
+	var template []CSV
 
 	for {
 		line, err := reader.Read() //para cada linha
@@ -42,7 +42,7 @@ func main() {
 		} else if err != nil {
 			checkErr(err)
 		}
-		person = append(person, CSV{ //adiciona uma pessoa
+		template = append(template, CSV{ //adiciona uma pessoa
 			Request:  line[0],
 			Response: line[1],
 		})
@@ -53,6 +53,6 @@ func main() {
 	//fmt.Println(string(personJSON)) //exibe dados do csv
 	//[{"name":"name","nickname":"nickname","text":"text"},{"name":"Valéria","nickname":"Valchan","text":"has been here!"}]
 	fmt.Println("{{$root := initTag}}")
-	fmt.Println("{{$addTag $root " + string(person[1].Request) + " " + person[1].Response + "}}") //exibe dados do csv
+	fmt.Println("{{$addTag $root " + "\"" + template[1].Request + "\"" + " " + template[1].Response + "}}") //exibe dados do csv
 	// Valchan has been here!
 }
