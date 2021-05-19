@@ -11,9 +11,8 @@ import (
 
 // CSV : csv
 type CSV struct { //estrutura que receberá os dados do CSV
-	Name     string `json:"name"`
-	Nickname string `json:"nickname"`
-	Text     string `json:"text"`
+	Request  string `json:"request"`
+	Response string `json:"response"`
 }
 
 func checkErr(err error) { //checa erros
@@ -44,17 +43,16 @@ func main() {
 			checkErr(err)
 		}
 		person = append(person, CSV{ //adiciona uma pessoa
-			Name:     line[0],
-			Nickname: line[1],
-			Text:     line[2],
+			Request:  line[0],
+			Response: line[1],
 		})
 	}
 
-	// personJSON, err := json.Marshal(person) //converte para JSON
-	// checkErr(err)
-	// fmt.Println(string(personJSON)) //exibe dados do csv
-	// //[{"name":"name","nickname":"nickname","text":"text"},{"name":"Valéria","nickname":"Valchan","text":"has been here!"}]
-
-	fmt.Println("{{$addTag $root " + person[1].Name + " " + person[1].Nickname + "}}") //exibe dados do csv
+	//personJSON, err := json.Marshal(person) //converte para JSON
+	//checkErr(err)
+	//fmt.Println(string(personJSON)) //exibe dados do csv
+	//[{"name":"name","nickname":"nickname","text":"text"},{"name":"Valéria","nickname":"Valchan","text":"has been here!"}]
+	fmt.Println("{{$root := initTag}}")
+	fmt.Println("{{$addTag $root " + string(person[1].Request) + " " + person[1].Response + "}}") //exibe dados do csv
 	// Valchan has been here!
 }
