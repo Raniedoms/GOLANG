@@ -22,7 +22,7 @@ func main() {
 
 	//O ponteiro guarda o endereço de memória de um valor inteiro por exemplo
 	variavel3 = 100
-	ponteiro = &variavel3 //dentro do endereç ode memória esta o valor 10 - 0xc0000140e0
+	ponteiro = &variavel3 //dentro do endereço de memória esta o valor 10 - 0xc0000140e0
 
 	fmt.Println(variavel3, ponteiro)
 

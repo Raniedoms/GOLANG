@@ -59,6 +59,6 @@ func main() {
 			Response: line.Response,
 		}
 		fmt.Println("{{$addTag $root " + "\"" + emp.Request + "\"" + " " + emp.Response + "}}") //exibe dados do csv
-	} // Valchan has been here!
+	}
 	fmt.Println("{{toJson $root}}")
 }
