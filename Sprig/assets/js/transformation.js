@@ -1,10 +1,16 @@
-const { event } = require("jquery");
+$('#transformJson').on('submit', transformJson);
 
-$('#transform-Json').on('submit', transformJson);
+
+$("#transformation").submit(function(event){
+    loadAjax();
+    event.preventDefault()
+ })
+
+
 
 function transformJson(evento){
     evento.preventDefault();
-    console.log("Dentro da função transformation");
+    console.log("Dentro da função transformation");zzz
 
     if($('#request').val().length != 0){
         alert("Requisição não encaminhada")

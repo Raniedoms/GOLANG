@@ -12,21 +12,12 @@
 </head>
 <body>
     <div class="container">
-        <form class="transformJson" id="transformJson" method="POST" onsubmit="false" >
-            <h1 class="transformation">Transformation</h1>
+        <form class="result" id="result" method="POST" >
+            <h1 class="result">Result</h1>
             <div class="form-group">
-                <textarea class="form-control" name="transformation" id="transformation" rows="10"  ></textarea>
-            </div>
-            <h1 class="input">Input</h1>
-            <div class="form-group">
-                <textarea class="form-control" name="request" id="request" rows="10" ></textarea>
-            </div>
-            <label>
-                <button type="submit" class="btn btn-primary">executar</button>
-                <input type="reset" class="btn btn-primary btn-sm"></input>
-            </label>
+                <textarea class="form-control" name="result" id="result" rows="10">{{.}}</textarea>
+            </div> 
         </form> 
-        
     </div>
 
 
