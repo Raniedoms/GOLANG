@@ -20,7 +20,7 @@ func main() {
 	//r.HandleFunc("/transformation", indexHandler)
 	r.HandleFunc("/transformation", indexPosHandlerRequest) //.Methods("POST")
 	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe(":8001", nil))
+	log.Fatal(http.ListenAndServe(":8000", nil))
 
 }
 
@@ -43,7 +43,7 @@ func indexPosHandlerRequest(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal([]byte(request), &payloadMap)
 	if err != nil {
-		panic(err)
+		w.Write([]byte(err.Error()))
 	}
 
 	var output bytes.Buffer
