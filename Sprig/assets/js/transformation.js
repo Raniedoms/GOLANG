@@ -1,16 +1,12 @@
-$('#transformJson').on('submit', transformJson);
+$('#transformJson #submeter').on('submit', transformJson);
 
 
-$("#transformation").submit(function(event){
-    loadAjax();
-    event.preventDefault()
- })
 
 
 
 function transformJson(evento){
     evento.preventDefault();
-    console.log("Dentro da função transformation");zzz
+    console.log("Dentro da função transformation");
 
     if($('#request').val().length != 0){
         alert("Requisição não encaminhada")
