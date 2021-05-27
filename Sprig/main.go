@@ -90,7 +90,7 @@ func indexPosHandlerRequest(w http.ResponseWriter, r *http.Request) {
 		out := output.Bytes()
 
 		var outputFormatado bytes.Buffer
-		json.Indent(&outputFormatado, out, " ", "    ")
+		json.Indent(&outputFormatado, out, "", "	")
 
 		payloadMap["result"] = &outputFormatado
 		//w.Write([]byte("request: " + request + "\n" + "transformation: " + transformation + "\n\t"))
