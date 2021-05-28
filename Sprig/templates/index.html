@@ -5,37 +5,35 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GO-TEMPLATE</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
-    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="assets/css/style.css"/>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js"></script>
-    <script src="http://malsup.github.com/jquery.form.js"></script>
-    <script src="/assets/js/jquery.min.js"></script>
-    <script src="/assets/js/jquery-form.js"></script>
 </head>
+
 <body>
     <div class="container">
         <form method="POST" class="transformJson" id="transformJson" name="transformJson" >
-            <h1 class="transformation">Transformation</h1>
+            <h5 class="result">Result</h5>
             <div class="form-group">
-                <textarea class="form-control" name="transformation" id="transformation" rows="10" >{{.}}</textarea>
-            </div>
-            <h1 class="input">Input</h1>
-            <div class="form-group">
-                <textarea class="form-control" name="request" id="request" rows="10" >{{.}}</textarea>
+                <textarea class="form-control" name="result" id="result" rows="10" readonly  style="resize:none; padding: 10px;">{{.result}}</textarea>
             </div>
             <label>
-                <button type="submit"  id="submeter" class="btn btn-primary">executar</button>
-                <input type="reset" class="btn btn-primary"></input>
+                <button type="submit" id="submeter" class="btn btn-primary" style="margin-top: 2px;">executar</button>
+                <input type="reset" class="btn btn-primary" style="margin-top: 2px;"></input>
             </label>
-        </form> 
-        
+            <h5 class="transformation">Transformation</h5>
+            <div class="form-group">
+                <textarea class="form-control" name="transformation" id="transformation" rows="10" >{{.transformation}}</textarea>
+            </div>
+            <h5 class="input">Input</h5>
+            <div class="form-group">
+                <textarea class="form-control" name="request" id="request" rows="10" >{{.input}}</textarea>
+            </div>
+        </form>
     </div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
-    
-    <script src="/assets/js/transformation.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css" href="../assets/css/style.css"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="../assets/js/transformation.js"></script>
 </body>
 </html>
 

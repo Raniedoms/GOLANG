@@ -1,5 +1,5 @@
 .transformation{
-    color: rgb(39, 3, 3);
+    color: rgb(255, 24, 24);
     font-size: 25px;
 }
 
@@ -11,8 +11,20 @@
 .result{
     font-size: 25px;
     color: rgb(252, 11, 11);
+    margin-top: 15px;
 }
 
 button{
     text-align: center;
 }
+
+.form-group{
+    position: relative;
+
+}
+
+.name{
+    width: auto;
+    clear: both;
+}
+
