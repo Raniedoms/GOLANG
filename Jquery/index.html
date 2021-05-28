@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form class="form" id="frmCadAcolhido" name="frmCadAcolhido" method="post">
+        <input type="hidden" id="acao" name="acao" value="inserir" />
+        <label class="control-label">Nome</label>
+        <input type="text" class="control" id="nome" name="nome" required />
+        <label class="control-label">CPF</label>
+        <input type="text" class="control" id="cpf" name="cpf" required maxlength="11" />
+        <input type="button" id="btnCadastrar" name="btnCadastrar" value="Cadastrar" />
+        <input type="reset" id="btnLimpar" name="btnLimpar" value="Limpar" />
+    </form>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+        $(function(){
+            $('#frmCadAcolhido #btnCadastrar').on('click',enviaForm);
+        });
+        function enviaForm(){
+        var acao = $('#frmCadAcolhido #acao'),
+        nome = $('#frmCadAcolhido #nome'),
+        cpf = $('#frmCadAcolhido #cpf'),
+        btn = $('#frmCadAcolhido #btnCadastrar');
+        btn.prop({'disabled':true}); // ajuda a evitar duplo click e várias requisições
+        if(acao.val()=='inserir'){
+            if(nome.val()==undefined || nome.val()==null || nome.val()==''){
+                alert('Favor preencher o campo');
+                nome.focus();
+                btn.prop({'disabled':false});
+                return false;
+            }
+            else if(cpf.val()==undefined || cpf.val()==null || cpf.val()==''){
+                alert('Favor preencher o campo');
+                cpf.focus();
+                btn.prop({'disabled':false});
+                return false;
+            }
+            else{
+                $.post('insert.php',
+                    {acao : "\'" + acao.val() + "\'",nome: "\'" + nome.val() + "\'",cpf: "\'" + cpf.val() + "\'"},
+                    function(data){
+                        alert(data); //Trate o resultado como quiser
+                        btn.prop({'disabled':false});
+                        return false; // impede a atualização da página e mantém as informações nos campos
+                    }
+                );
+            }   
+        }else{ alert('Erro ao enviar form');btn.prop({'disabled':false});return false;}
+    }
+    </script>
+</body>
+</html>
+
+
+

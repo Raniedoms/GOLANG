@@ -46,19 +46,25 @@ func main() {
 	//r.HandleFunc("/transformation", indexHandler)
 	r.HandleFunc("/transformation", indexPosHandlerRequest) //.Methods("POST")
 	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	log.Fatal(http.ListenAndServe(":8003", nil))
 
 }
 
 func indexPosHandlerRequest(w http.ResponseWriter, r *http.Request) {
+	//estou transformando uma interface de map na variavel payloadMap
 	payloadMap := make(map[string]interface{})
 	//templates.ExecuteTemplate(w, "index.html", payloadMap)
+
+	//Para todas as solicitações, o ParseForm analisa a consulta bruta do URL e atualiza o r.Form.
 	r.ParseForm()
 
+	//Pego as infos pelos Id's no form no index.html
 	request := r.PostForm.Get("request")
 	transformation := r.PostForm.Get("transformation")
 
 	newTemplate := template.New("template")
+
+	//executo um map de funcMap onde contem todas as funções que posso introduzir como também as funções do Mastermind/sprig
 	newTemplate = newTemplate.Funcs(funcMap)
 
 	payloadMap["transformation"] = transformation
@@ -78,8 +84,9 @@ func indexPosHandlerRequest(w http.ResponseWriter, r *http.Request) {
 
 		payloadTeste := make(map[string]interface{})
 		err = json.Unmarshal([]byte(request), &payloadTeste)
-
-		fmt.Println(err)
+		if err != nil {
+			payloadMap["result"] = err.Error()
+		}
 
 		var output bytes.Buffer
 		err = t.Execute(&output, payloadTeste)
@@ -101,7 +108,8 @@ func indexPosHandlerRequest(w http.ResponseWriter, r *http.Request) {
 
 	t2, err2 := template.ParseFiles("templates/index.html")
 	if err2 != nil {
-		w.Write([]byte(err.Error()))
+		//w.Write([]byte(err.Error()))
+		payloadMap["result"] = err.Error()
 	}
 
 	t2.Execute(w, payloadMap)
@@ -114,7 +122,6 @@ func makeList(el interface{}) []interface{} {
 	if el == nil {
 		return make([]interface{}, 0)
 	}
-
 	switch el.(type) {
 	case []interface{}:
 		return el.([]interface{})
@@ -187,7 +194,6 @@ func mulf(a, b interface{}) float64 {
 func getPeriod(layout, dateInitial, dateFinal string) int64 {
 	initialDate, _ := time.Parse(layout, dateInitial)
 	finalDate, _ := time.Parse(layout, dateFinal)
-
 	duration := finalDate.Sub(initialDate)
 	days := duration.Hours() / 24
 	return int64(days)

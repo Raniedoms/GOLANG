@@ -1,31 +1,50 @@
-$('#transformJson #submeter').on('submit', transformJson);
+document.getElementById('transformJson').addEventListener('keydown', function(e) {
+    if(e.keyCode === 9) { // TAB
+        var posAnterior = this.selectionStart;
+        var posPosterior = this.selectionEnd;
 
+        e.target.value = e.target.value.substring(0, posAnterior)
+                         + '\t'
+                         + e.target.value.substring(posPosterior);
 
-
-
-
-function transformJson(evento){
-    evento.preventDefault();
-    console.log("Dentro da função transformation");
-
-    if($('#request').val().length != 0){
-        alert("Requisição não encaminhada")
-        return
+        this.selectionStart = posAnterior + 1;
+        this.selectionEnd = posAnterior + 1;
+ 
+        // não move pro próximo elemento
+        e.preventDefault();
     }
+}, false);
 
+document.getElementById('transformation').addEventListener('keydown', function(e) {
+    if(e.keyCode === 9) { // TAB
+        var posAnterior = this.selectionStart;
+        var posPosterior = this.selectionEnd;
 
-    if (transformation != ""){
-        alert("Transformação não encaminhada")
-        return
+        e.target.value = e.target.value.substring(0, posAnterior)
+                         + '\t'
+                         + e.target.value.substring(posPosterior);
+
+        this.selectionStart = posAnterior + 1;
+        this.selectionEnd = posAnterior + 1;
+ 
+        // não move pro próximo elemento
+        e.preventDefault();
     }
+}, false);
 
+document.getElementById('request').addEventListener('keydown', function(e) {
+    if(e.keyCode === 9) { // TAB
+        var posAnterior = this.selectionStart;
+        var posPosterior = this.selectionEnd;
 
-    $.ajax({
-        url:"transformation",
-        method:"POST",
-        data:{
-            transformation: $('#transformation').val(),
-            request : $('#request').val()
-        }
-    })
-}
+        e.target.value = e.target.value.substring(0, posAnterior)
+                         + '\t'
+                         + e.target.value.substring(posPosterior);
+
+        this.selectionStart = posAnterior + 1;
+        this.selectionEnd = posAnterior + 1;
+ 
+        // não move pro próximo elemento
+        e.preventDefault();
+    }
+}, false);
