@@ -1,0 +1,39 @@
+version: "3.7"
+
+networks:
+  kong-net:
+    name: kong-net
+    driver: bridge
+   
+
+services:
+
+  servicea:
+    image: wesleywillians/kong-service:latest
+    environment:
+      PORT: ":8069"
+      CONTENT: "<h1>Service A</h1>"
+    networks:
+      - kong-net
+    ports:
+      - 8069:8069
+
+  serviceb:
+    image: wesleywillians/kong-service:latest
+    environment:
+      PORT: ":8070"
+      CONTENT: "<h1>Service b</h1>"
+    networks:
+      - kong-net
+    ports:
+      - 8070:8070
+
+  servicec:
+    image: wesleywillians/kong-service:latest
+    environment:
+      PORT: ":8071"
+      CONTENT: "<h1>Service C</h1>"
+    networks:
+      - kong-net
+    ports:
+      - 8071:8071
