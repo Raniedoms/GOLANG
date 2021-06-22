@@ -1,0 +1,56 @@
+
+## Deployment
+replicaCount: 1
+
+image:
+  repository: gcr.io/trademaster-hml/-ns-
+  tag: latest
+  pullPolicy: Always
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1024Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+## Service
+service:
+  name: -name-
+  type: NodePort
+  port: 3000
+  sec_port: 3443
+
+## alterar apenas essa tag no arquivo
+## adionar os environments na tag abaixo
+env:
+  repo:
+    name: REPO
+    value: value-repo
+  app:
+    name: APP
+    value: value-application
+  node:
+    name: NODE_ENV
+    value: HML
+
+
+## Ingress
+ingress:
+  enabled: false
+
+
+## Istio
+#externalHost: -name-.hml.trademaster.com.br
+#internalHost: -name-.hml.trademaster.com.br
+
+
+
+

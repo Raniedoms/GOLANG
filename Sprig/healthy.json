@@ -1,0 +1,8 @@
+{
+    "Http":{"Code":200,"Description":""},
+    "Header":{	"Content-Type":"application/json",
+                "Agent": "sprig v1.0(Beta)"
+        
+            },
+    "Body":{"status":"OK"}
+}

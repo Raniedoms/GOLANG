@@ -1,0 +1,378 @@
+// Jenkinsfile
+//
+// v 2.4
+//
+// 06/05/2021
+
+import org.jenkinsci.plugins.pipeline.modeldefinition.Utils
+
+def label = "worker-${UUID.randomUUID().toString()}"
+
+def notifySlack(String buildStatus = '') {
+  // Build status of null means success.
+  buildStatus = buildStatus ?: 'SUCCESS'
+
+  def color
+
+  if (buildStatus == 'SUCCESS') {
+    color = '#BDFFC3'
+  } else if (buildStatus == 'UNSTABLE') {
+    color = '#FFFE89'
+  } else {
+    color = '#FF9FA1'
+  }
+
+  def msg = "${buildStatus}: `${env.JOB_NAME}` #${env.BUILD_NUMBER}:\n${env.BUILD_URL}"
+  slackSend(color: color, message: msg)
+}
+
+// Environment Variables
+//
+//
+// Informar se o deploy deve ocorrer no ambiente legado Corpflex
+//
+// *** Importante, se a variável legado estiver "S" não será feito
+//     deploy em nenhum ambiente GCP e vice-versa
+
+legado = "N"
+
+// *** Não alterar nada a partir daqui ***
+
+String[] str;
+str = job_name.split('/');
+short_job_name = str[1].toLowerCase()
+stack = str[0].toLowerCase()
+myRepo = ""
+gitCommit = ""
+gitBranch = ""
+shortGitCommit = ""
+branch = env.BRANCH_NAME.split('/');
+credential = ""
+PROJECT_ID = ""
+ambiente = ""
+pr = "N"
+ip_lb = ""
+name_dns = ""
+
+if (env.BRANCH_NAME.startsWith('feature/')) {
+  short_branch = branch[1].toLowerCase()
+} else {
+  short_branch = branch[0].toLowerCase()
+}
+
+script {
+  if (env.BRANCH_NAME.startsWith('feature/') || env.BRANCH_NAME == 'develop') {
+      ambiente = "dev"
+      PROJECT_ID = "trademaster-dev"
+      credential = "jenkins-trademaster-dev"
+  } else if (env.BRANCH_NAME == 'homolog') {
+      ambiente = "hml"
+      PROJECT_ID = "trademaster-hml"
+      credential = "jenkins-trademaster-hml"
+  } else if (env.BRANCH_NAME.startsWith('hotfix/')) {
+      ambiente = "prd"
+      PROJECT_ID = "trademaster-prd"
+      credential = "jenkins-trademaster-prd"
+      pr = "S"
+  } else if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main') {
+      ambiente = "prd"
+      PROJECT_ID = "trademaster-prd" 
+      credential = "jenkins-trademaster-prd"
+  } else if (env.BRANCH_NAME == 'pr-merge') {
+      println "branch pr-merge"
+      credential = "jenkins-trademaster-dev"
+  } else {
+      println "nomenclatura de branches fora do padrão feature/* develop homolog hotfix/* master"
+      pr = "S"
+      credential = "jenkins-trademaster-dev"
+      //exit 1
+  }
+}
+
+println short_job_name
+println stack
+println PROJECT_ID
+println env.BRANCH_NAME
+println ambiente
+println pr
+
+podTemplate(label: label, containers: [
+  containerTemplate(name: 'devops-toolbox', image: "gcr.io/trademaster-infra/devops-toolbox:latest", command: 'cat', ttyEnabled: true,privileged: true, alwaysPullImage: true, resourceRequestMemory: '2048Mi', resourceLimitMemory: '2048Mi')
+],
+volumes: [
+  //hostPathVolume(mountPath: '/home/gradle/.gradle', hostPath: '/tmp/jenkins/.gradle'),
+  hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+]) {
+
+  node(label) {
+    try {
+      deleteDir() 
+      def myRepo = checkout scm
+      def gitCommit = myRepo.GIT_COMMIT
+      def gitBranch = myRepo.GIT_LOCAL_BRANCH
+      def shortGitCommit = "${gitCommit[0..7]}"
+
+
+      stage('Container Build') {
+        container('devops-toolbox') {
+          withCredentials([file(credentialsId: "${credential}", variable: 'GC_KEY')]) {
+            sh """
+              gcloud auth configure-docker --quiet
+              docker build --build-arg NODE_ENV=${ambiente.toUpperCase()} -t ${short_job_name} .
+              if [ $pr = "N" ]; then
+                docker tag ${short_job_name}:latest gcr.io/${PROJECT_ID}/${short_job_name}:${gitCommit}
+                docker save ${short_job_name}:latest > ${short_job_name}-latest.tar
+              fi
+            """
+          }
+        }
+      }
+
+      stage('SonarQube analysis') {
+        container('devops-toolbox') {
+          def scannerHome = tool 'SonarQube';
+          withSonarQubeEnv('SonarQube') {
+            sh """
+              echo sonar.projectKey=${short_job_name} > sonar-project.properties
+              echo sonar.projectName=${short_job_name} >> sonar-project.properties
+              echo sonar.projectVersion=1.0 >> sonar-project.properties
+              echo sonar.host.url=https://sonarqube.infra.trademaster.com.br >> sonar-project.properties
+              echo sonar.sources=. >> sonar-project.properties
+            """
+            sh "${scannerHome}/bin/sonar-scanner"
+          }
+        }
+      }
+
+      stage('Deploy Legado HML') {
+        container('devops-toolbox') {
+          if ( pr == "N" ) {
+            if ( legado == "S" ) {
+              if ( ambiente == 'hml' ) { 
+                def remote = [:]
+                remote.name = "hml"
+                remote.host = "10.210.35.21"
+                remote.allowAnyHosts = true
+                withCredentials([usernamePassword(credentialsId: 'ssh-legado-hml', passwordVariable: 'password', usernameVariable: 'userName')]) {
+                  remote.user = userName
+                  remote.password = password
+                  sshPut remote: remote, from: "${short_job_name}-latest.tar", into: '.'
+                  sshPut remote: remote, from: "variables-${ambiente}.env", into: '.'
+                  sshCommand remote: remote, command: "docker load -i ${short_job_name}-latest.tar"
+                  sshCommand remote: remote, command: "docker ps -a | grep ${short_job_name} | awk '{print \$2}' > builds-${short_job_name}"
+                  sshGet remote: remote, from: "builds-${short_job_name}", into: "builds-${short_job_name}", override: true
+                  def output_list = readFile("builds-${short_job_name}")
+                  def output_dockerfile = readFile("Dockerfile")
+                  def porta_dockerfile = $/echo "${output_dockerfile}" | sed -n /^EXPOSE/p/$
+                  def porta = sh (returnStdout: true, script: "${porta_dockerfile}").trim()
+                  porta_dockerfile = $/echo "${porta}" | cut -d " " -f 2/$
+                  porta = sh (returnStdout: true, script: "${porta_dockerfile}").trim()              
+                  if (output_list.size() > 0) {
+                    sshCommand remote: remote, command: "docker stop ${short_job_name}"
+                    sshCommand remote: remote, command: "docker rm ${short_job_name}"
+                  }
+                  sshCommand remote: remote, command: "docker run -d -p ${porta}:${porta} --env-file variables-${ambiente}.env -v /mnt/servidor14:/mnt/servidor14 --name ${short_job_name} ${short_job_name}"             
+                  sshRemove remote: remote, path: "builds-${short_job_name}"
+                  sshRemove remote: remote, path: "${short_job_name}-latest.tar"
+                  sshRemove remote: remote, path: "variables-${ambiente}.env"
+                }
+              } else {
+                  echo 'skipping stage... Deploy Legado HML'
+                  Utils.markStageSkippedForConditional('Deploy Legado HML')
+              }
+            } else {
+                echo 'skipping stage... Deploy Legado HML'
+                Utils.markStageSkippedForConditional('Deploy Legado HML')
+            }
+          }
+        }
+      }
+
+      stage('Deploy Legado PRD') {
+        container('devops-toolbox') {
+          if ( pr == "N" ) {
+            if ( legado == "S" ) {
+              if ( ambiente == 'prd' ) { 
+                def remote = [:]
+                remote.name = "prd"
+                remote.host = "10.210.35.19"
+                remote.allowAnyHosts = true
+                withCredentials([usernamePassword(credentialsId: 'ssh-legado-prd', passwordVariable: 'password', usernameVariable: 'userName')]) {
+                  remote.user = userName
+                  remote.password = password
+                  sshPut remote: remote, from: "${short_job_name}-latest.tar", into: '.'
+                  sshPut remote: remote, from: "variables-${ambiente}.env", into: '.'
+                  sshCommand remote: remote, command: "docker load -i ${short_job_name}-latest.tar"
+                  sshCommand remote: remote, command: "docker ps -a | grep ${short_job_name} | awk '{print \$2}' > builds-${short_job_name}"
+                  sshGet remote: remote, from: "builds-${short_job_name}", into: "builds-${short_job_name}", override: true
+                  def output_list = readFile("builds-${short_job_name}")
+                  def output_dockerfile = readFile("Dockerfile")
+                  def porta_dockerfile = $/echo "${output_dockerfile}" | sed -n /^EXPOSE/p/$
+                  def porta = sh (returnStdout: true, script: "${porta_dockerfile}").trim()
+                  porta_dockerfile = $/echo "${porta}" | cut -d " " -f 2/$
+                  porta = sh (returnStdout: true, script: "${porta_dockerfile}").trim()              
+                  if (output_list.size() > 0) {
+                    sshCommand remote: remote, command: "docker stop ${short_job_name}"
+                    sshCommand remote: remote, command: "docker rm ${short_job_name}"
+                  }
+                  sshCommand remote: remote, command: "docker run -d -p ${porta}:${porta} --env-file variables-${ambiente}.env -v /mnt/servidor14:/mnt/servidor14 --name ${short_job_name} ${short_job_name}"             
+                  sshRemove remote: remote, path: "builds-${short_job_name}"
+                  sshRemove remote: remote, path: "${short_job_name}-latest.tar"
+                  sshRemove remote: remote, path: "variables-${ambiente}.env"
+                }
+              } else {
+                  echo 'skipping stage... Deploy Legado PRD'
+                  Utils.markStageSkippedForConditional('Deploy Legado PRD')
+              }
+            } else {
+                echo 'skipping stage... Deploy Legado PRD'
+                Utils.markStageSkippedForConditional('Deploy Legado PRD')
+            }
+          }
+        }
+      }
+  
+      stage('Container Registry Push GCP') {
+        container('devops-toolbox') {
+          if ( pr == "N" ) {
+            withCredentials([file(credentialsId: "${credential}", variable: 'GC_KEY')]) {
+              sh """
+                gcloud auth activate-service-account --key-file ${GC_KEY};
+                gcloud auth configure-docker --quiet
+                docker push gcr.io/${PROJECT_ID}/${short_job_name}:${gitCommit}
+              """
+            }
+          } else {
+              echo 'skipping stage... Container Registry Push GCP, pre-build PR'
+              Utils.markStageSkippedForConditional('Container Registry Push GCP')
+          }
+        }
+      }
+
+      stage('Application Deploy Kubernetes') {
+        container('devops-toolbox'){
+          if ( legado == "N" ) {
+            if ( pr == "N" ) {
+              withCredentials([file(credentialsId: "${credential}", variable: 'GC_KEY')]) {
+                  if (env.BRANCH_NAME.startsWith('feature/')) {
+                    sh """
+                      cd ci
+                      mv folder ${short_job_name}-${short_branch}
+                      sed -i "s/latest/${gitCommit}/g" ${short_job_name}-${short_branch}/${ambiente}-values.yaml
+                      sed -i "s/-ns-/"${short_job_name}"/g" ${short_job_name}-${short_branch}/${ambiente}-values.yaml
+                      sed -i "s/-name-/"${short_job_name}-${short_branch}"/g" ${short_job_name}-${short_branch}/${ambiente}-values.yaml
+                      sed -i "s/value-application/"${short_job_name}-${short_branch}"/g" ${short_job_name}-${short_branch}/${ambiente}-values.yaml
+                      sed -i "s/value-repo/"${short_job_name}"/g" ${short_job_name}-${short_branch}/${ambiente}-values.yaml
+                      sed -i "s/-name-/"${short_job_name}-${short_branch}"/g" ${short_job_name}-${short_branch}/Chart.yaml
+                      sed -i "s/-ns-/"${short_job_name}"/g" ${short_job_name}-${short_branch}/templates/ingress-interno.yaml
+                      sed -i "s/-name-/"${short_job_name}-${short_branch}"/g" ${short_job_name}-${short_branch}/templates/ingress-interno.yaml
+                      sed -i "s/-ambiente-/"${ambiente}"/g" ${short_job_name}-${short_branch}/templates/ingress-interno.yaml
+                      gcloud config set project ${PROJECT_ID}
+                      gcloud container clusters get-credentials ${ambiente} --zone us-east1 --project ${PROJECT_ID}
+                      kubectl create ns ${short_job_name} || true
+                      kubectl get secret tls-secret -n nginx -o yaml \
+                      | sed -e 's/namespace: nginx/namespace: ${short_job_name}/g' \
+                      | kubectl apply -n ${short_job_name} -f - --force
+                      helm upgrade --namespace ${short_job_name} --install "${short_job_name}-${short_branch}" --values ${short_job_name}-${short_branch}/${ambiente}-values.yaml ${short_job_name}-${short_branch} --debug
+                      kubectl -n ${short_job_name} rollout status deployment/"${short_job_name}-${short_branch}"
+                      export ip_lb="\$(kubectl get svc -n nginx nginx-ingress-internal-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+                      gcloud dns record-sets transaction start --zone=${ambiente}
+                      export name_dns="\$(gcloud dns record-sets list --zone=${ambiente} --name="${short_job_name}-${short_branch}.${ambiente}.trademaster.com.br")"
+                      
+                      if [ -z \$name_dns ];then
+                        gcloud dns record-sets transaction add \$ip_lb --name="${short_job_name}-${short_branch}.${ambiente}.trademaster.com.br" \
+                          --ttl="300" \
+                          --type="A" \
+                          --zone=${ambiente}
+                        gcloud dns record-sets transaction execute --zone=${ambiente}
+                      fi
+                    """
+                  } else if (env.BRANCH_NAME == 'develop' || env.BRANCH_NAME == 'homolog') {
+                    sh """
+                      cd ci
+                      mv folder ${short_job_name}
+                      sed -i "s/latest/${gitCommit}/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/-ns-/"${short_job_name}"/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/-name-/"${short_job_name}"/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/value-application/"${short_job_name}"/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/value-repo/"${short_job_name}"/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/-name-/"${short_job_name}"/g" ${short_job_name}/Chart.yaml
+                      sed -i "s/-ns-/"${short_job_name}"/g" ${short_job_name}/templates/ingress-interno.yaml
+                      sed -i "s/-name-/"${short_job_name}"/g" ${short_job_name}/templates/ingress-interno.yaml
+                      sed -i "s/-ambiente-/"${ambiente}"/g" ${short_job_name}/templates/ingress-interno.yaml
+                      gcloud config set project ${PROJECT_ID}
+                      gcloud container clusters get-credentials ${ambiente} --zone us-east1 --project ${PROJECT_ID}
+                      kubectl create ns ${short_job_name} || true
+                      kubectl get secret tls-secret -n nginx -o yaml \
+                      | sed -e 's/namespace: nginx/namespace: ${short_job_name}/g' \
+                      | kubectl apply -n ${short_job_name} -f - --force
+                      helm upgrade --namespace ${short_job_name} --install "${short_job_name}" --values ${short_job_name}/${ambiente}-values.yaml ${short_job_name} --debug
+                      kubectl -n ${short_job_name} rollout status deployment/"${short_job_name}"
+                      export ip_lb="\$(kubectl get svc -n nginx nginx-ingress-internal-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+                      gcloud dns record-sets transaction start --zone=${ambiente}
+                      export name_dns="\$(gcloud dns record-sets list --zone=${ambiente} --name="${short_job_name}.${ambiente}.trademaster.com.br")"
+                      
+                      if [ -z \$name_dns ];then
+                        gcloud dns record-sets transaction add \$ip_lb --name="${short_job_name}.${ambiente}.trademaster.com.br" \
+                          --ttl="300" \
+                          --type="A" \
+                          --zone=${ambiente}
+                        gcloud dns record-sets transaction execute --zone=${ambiente}
+                      fi
+                    """               
+                  } else if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main') {
+                    sh """
+                      cd ci
+                      mv folder ${short_job_name}
+                      sed -i "s/latest/${gitCommit}/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/-ns-/"${short_job_name}"/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/-name-/"${short_job_name}"/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/value-application/"${short_job_name}"/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/value-repo/"${short_job_name}"/g" ${short_job_name}/${ambiente}-values.yaml
+                      sed -i "s/-name-/"${short_job_name}"/g" ${short_job_name}/Chart.yaml
+                      sed -i "s/-ns-/"${short_job_name}"/g" ${short_job_name}/templates/ingress-interno.yaml
+                      sed -i "s/-name-/"${short_job_name}"/g" ${short_job_name}/templates/ingress-interno.yaml
+                      sed -i "s/-ambiente-.//g" ${short_job_name}/templates/ingress-interno.yaml
+                      gcloud config set project ${PROJECT_ID}
+                      gcloud container clusters get-credentials ${ambiente} --zone us-east1 --project ${PROJECT_ID}
+                      kubectl create ns ${short_job_name} || true
+                      kubectl get secret tls-secret -n nginx -o yaml \
+                      | sed -e 's/namespace: nginx/namespace: ${short_job_name}/g' \
+                      | kubectl apply -n ${short_job_name} -f - --force
+                      helm upgrade --namespace ${short_job_name} --install "${short_job_name}" --values ${short_job_name}/${ambiente}-values.yaml ${short_job_name} --debug
+                      kubectl -n ${short_job_name} rollout status deployment/"${short_job_name}"
+                      export ip_lb="\$(kubectl get svc -n nginx nginx-ingress-internal-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+                      gcloud dns record-sets transaction start --zone=trademaster
+                      export name_dns="\$(gcloud dns record-sets list --zone=trademaster --name="${short_job_name}.trademaster.com.br")"
+                      
+                      if [ -z \$name_dns ];then
+                        gcloud dns record-sets transaction add \$ip_lb --name="${short_job_name}.trademaster.com.br" \
+                          --ttl="300" \
+                          --type="A" \
+                          --zone=trademaster
+                        gcloud dns record-sets transaction execute --zone=trademaster
+                      fi
+                    """
+                  } 
+              }
+            } else {
+                echo 'skipping stage... Application Deploy Kubernetes, pre-build PR'
+                Utils.markStageSkippedForConditional('Application Deploy Kubernetes')
+            }
+          } else {
+              echo 'skipping stage... Application Deploy Kubernetes, Legado ENABLED'
+              Utils.markStageSkippedForConditional('Application Deploy Kubernetes')
+          }
+        }
+      }
+      
+    } catch (e) {
+      // If there was an exception thrown, the build failed
+      currentBuild.result = "FAILED"
+      throw e
+    } finally {
+      // Success or failure, always send notifications
+      notifySlack(currentBuild.result)
+    }
+  } 
+}

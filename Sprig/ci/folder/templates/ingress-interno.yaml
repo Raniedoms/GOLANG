@@ -1,0 +1,26 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gcp--name--ingress-int
+  namespace: -ns-
+  annotations:
+    kubernetes.io/ingress.class: nginx-internal
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-headers: Authorization, origin, accept
+    nginx.ingress.kubernetes.io/cors-allow-methods: GET, OPTIONS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+spec:
+ rules:
+ - host: "-name-.-ambiente-.trademaster.com.br"
+   http:
+     paths:
+     - path: /
+       backend:
+         serviceName: -name-
+         servicePort: 3000
+ tls:
+   - hosts:
+       - "*.-ambiente-.trademaster.com.br"
+     secretName: tls-secret

@@ -46,7 +46,7 @@ func main() {
 	//r.HandleFunc("/transformation", indexHandler)
 	r.HandleFunc("/transformation", indexPosHandlerRequest) //.Methods("POST")
 	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe(":8003", nil))
+	log.Fatal(http.ListenAndServe(":3000", nil))
 
 }
 
