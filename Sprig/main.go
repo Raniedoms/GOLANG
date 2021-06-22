@@ -101,14 +101,16 @@ func indexPosHandlerRequest(w http.ResponseWriter, r *http.Request) {
 
 		payloadMap["result"] = &outputFormatado
 		//w.Write([]byte("request: " + request + "\n" + "transformation: " + transformation + "\n\t"))
-
+		if err != nil {
+			payloadMap["result"] = err.Error()
+		}
 		fmt.Println(payloadMap)
 
 	}
 
 	t2, err2 := template.ParseFiles("templates/index.html")
 	if err2 != nil {
-		//w.Write([]byte(err.Error()))
+		w.Write([]byte(err.Error()))
 		payloadMap["result"] = err.Error()
 	}
 
@@ -130,6 +132,19 @@ func makeList(el interface{}) []interface{} {
 		l[0] = el
 		return l
 	}
+}
+
+func getItemFromListByIndex(list interface{}, index int) interface{} {
+	switch list.(type) {
+	case []interface{}:
+		for i, j := range list.([]interface{}) {
+			item := j.(map[string]interface{})
+			if i == index {
+				return item
+			}
+		}
+	}
+	return nil
 }
 
 func parseFloat(xs ...interface{}) (fs []float64, err error) {

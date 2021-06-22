@@ -22,5 +22,8 @@ desc usuarios; - verifica o que tem dentro da tabela
 go get github.com/go-sql-driver/mysql
 
 mysql -u golang -p
+Senha: golang
+
+//para entrar no banco
 use devbook;
 select * from usuarios;

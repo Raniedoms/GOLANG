@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+//slice de rotas
+//CRUD
 var rotasUsuarios = []Rota{
 	{
 		Uri:                "/usuarios",

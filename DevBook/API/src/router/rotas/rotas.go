@@ -7,6 +7,8 @@ import (
 )
 
 //Todas as funcoes terao que ter esse formato - Rota representa todas as rotas da API
+
+//Rotas representa todas as rotas da aplicação Web
 type Rota struct {
 	Uri    string
 	Metodo string
@@ -17,7 +19,8 @@ type Rota struct {
 
 //retornar o router com todas as rotas configuradas
 //ele vai receber um parametro de mux.Router e vai retornar um mux.Router
-//ele recebe o router que nao vai ter nenhuma rota dentro e vai configurar todas essas rotas  e devolver o router pronto
+//ele recebe o router que nao vai ter nenhuma rota dentro e vai configurar todas essas rotas
+//e devolver o router pronto
 //Configurar colcoa todas as rotas dentro do router
 func Configurar(r *mux.Router) *mux.Router {
 	rotas := rotasUsuarios
